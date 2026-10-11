@@ -174,7 +174,8 @@ if (typeof document !== "undefined") {
     if (!b || t < b) { localStorage.setItem(bestKey(), t); $("best").textContent = fmt(t); msg += " Yeni rekor! 🏆"; }
     $("modalText").textContent = msg + " Skorun gönderiliyor…";
     $("modal").hidden = false;
-    const res = await Scores.submit(nick, level, t);
+    pendingSubmit = Scores.submit(nick, level, t);
+    const res = await pendingSubmit;
     $("modalText").textContent = msg + (res.shared ? " Skorun ortak tabloya eklendi."
       : Scores.remote ? " Skor sunucuya gönderilemedi, bu cihazda kaydedildi." + (res.detail ? ` (${res.detail})` : "")
       : " Skor bu cihazdaki tabloya kaydedildi.");
@@ -201,11 +202,14 @@ if (typeof document !== "undefined") {
 
   /* ---- Skor tablosu ---- */
   let scoreLevel = level;
+  let pendingSubmit = null;      // son skorun gönderimi (tablo açılmadan önce beklenir)
+  let scoresFromWin = false;     // tablo bitiş penceresinden mi açıldı?
   async function renderScores(lv) {
     scoreLevel = lv;
     document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.lv === lv));
     const list = $("scoreList"); list.textContent = "";
     $("scoreNote").textContent = "Yükleniyor…";
+    if (pendingSubmit) { try { await pendingSubmit; } catch (e) {} }
     const { rows, shared, error } = await Scores.top(lv, 10);
     if (scoreLevel !== lv) return;
     $("scoreNote").textContent = shared ? "Herkesin en iyi süreleri"
@@ -239,8 +243,12 @@ if (typeof document !== "undefined") {
 
   $("changeNick").addEventListener("click", () => askNick());
   $("showScores").addEventListener("click", () => openScores(level));
-  $("winScores").addEventListener("click", () => openScores(level));
-  $("closeScores").addEventListener("click", () => { $("scoreModal").hidden = true; });
+  // Bitiş penceresinden açılırsa onu gizle (iki pencere üst üste binmesin); tablo kapanınca geri getir
+  $("winScores").addEventListener("click", () => { $("modal").hidden = true; scoresFromWin = true; openScores(level); });
+  $("closeScores").addEventListener("click", () => {
+    $("scoreModal").hidden = true;
+    if (scoresFromWin) { scoresFromWin = false; $("modal").hidden = false; }
+  });
   document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => renderScores(b.dataset.lv)));
 
   setNickUI();
