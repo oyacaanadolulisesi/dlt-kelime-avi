@@ -1,8 +1,8 @@
 /* Skor tablosu: Supabase (ortak) ya da tarayıcı (bu cihaz) */
 const Scores = (() => {
   const cfg = (typeof window !== "undefined" && window.KA_CONFIG) || {};
-  const url = String(cfg.SUPABASE_URL || "").replace(/\/$/, "");
-  const key = String(cfg.SUPABASE_ANON_KEY || "");
+  const url = String(cfg.SUPABASE_URL || "").trim().replace(/\/+$/, "");
+  const key = String(cfg.SUPABASE_ANON_KEY || "").trim();
   const remote = !!(url && key);
   const LOCAL = "ka_scores";
   const NICK_RE = /^[A-Za-z0-9ÇçĞğİıÖöŞşÜü _.\-]{2,16}$/;
@@ -23,7 +23,19 @@ const Scores = (() => {
     return [...seen.values()].slice(0, n);
   }
 
-  const headers = () => ({ apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json" });
+  // Eski anahtarlar (anon, "eyJ..." ile başlar) hem apikey hem Bearer ister;
+  // yeni "sb_publishable_..." anahtarları yalnızca apikey başlığıyla gönderilmelidir.
+  const headers = () => {
+    const h = { apikey: key, "Content-Type": "application/json" };
+    if (key.startsWith("eyJ")) h.Authorization = "Bearer " + key;
+    return h;
+  };
+
+  async function reason(res) {
+    let msg = "";
+    try { const j = await res.json(); msg = j.message || j.error_description || j.error || j.hint || ""; } catch (e) {}
+    return ("HTTP " + res.status + (msg ? ": " + String(msg).slice(0, 120) : "")).trim();
+  }
 
   async function submit(nick, level, seconds) {
     nick = cleanNick(nick);
@@ -37,11 +49,13 @@ const Scores = (() => {
         headers: { ...headers(), Prefer: "return=minimal" },
         body: JSON.stringify({ nickname: nick, level, seconds })
       });
-      return { ok: res.ok, shared: res.ok };
-    } catch (e) { return { ok: false, shared: false }; }
+      if (res.ok) return { ok: true, shared: true };
+      return { ok: false, shared: false, detail: await reason(res) };
+    } catch (e) { return { ok: false, shared: false, detail: "Bağlantı hatası" }; }
   }
 
   async function top(level, n = 10) {
+    let error = "";
     if (remote) {
       try {
         const q = `${url}/rest/v1/scores?select=nickname,seconds&level=eq.${encodeURIComponent(level)}&order=seconds.asc&limit=200`;
@@ -50,9 +64,10 @@ const Scores = (() => {
           const rows = (await res.json()).map((r) => ({ nick: String(r.nickname), seconds: +r.seconds }));
           return { rows: bestPerNick(rows, n), shared: true };
         }
-      } catch (e) {}
+        error = await reason(res);
+      } catch (e) { error = "Bağlantı hatası"; }
     }
-    return { rows: bestPerNick(readLocal().filter((r) => r.level === level), n), shared: false };
+    return { rows: bestPerNick(readLocal().filter((r) => r.level === level), n), shared: false, error };
   }
 
   return { remote, validNick, cleanNick, submit, top, bestPerNick };

@@ -10,9 +10,9 @@
 - 12×12 tablo, her oyunda rastgele 8 kelime (252 kelimelik havuz) / 12×12 grid, 8 random words per game (252-word pool)
 - Kelimeler DLT yazılışıyla; bulununca günümüz karşılığı görünür / Words in DLT forms; modern form revealed when found
 - Yatay ekranda ve bilgisayarda kelime listesi sağda, dikey ekranda altta / Word list on the right in landscape & desktop, below in portrait
-- Kolay (→ ↓ ↘) ve Zor (8 yön) seviyeleri / Easy and Hard (8 directions) levels
+- 3 seviye: Kolay (→ ↓), Orta (→ ↓ ↘), Zor (8 yön) / 3 levels: Easy (→ ↓), Medium (→ ↓ ↘), Hard (8 directions)
 - Dokunmatik ve fare ile sürükleyerek seçim / Drag selection with touch or mouse
-- Rumuzla giriş ve skor tablosu (Kolay / Zor ayrı) / Nickname login and leaderboard (separate Easy / Hard)
+- Rumuzla giriş ve skor tablosu (her seviye ayrı) / Nickname login and leaderboard (one per level)
 - Süre, en iyi süre (tarayıcıda saklanır), ipucu (+10 sn) / Timer, best time (stored in browser), hint (+10 s)
 - Sunucu gerektirmez: sadece statik dosyalar / No backend: static files only
 
@@ -48,6 +48,12 @@
      SUPABASE_ANON_KEY: "eyJ..."
    };
    ```
+   > **Önceki sürümü (2 seviye) kurduysanız / If you set up the earlier 2-level version:** SQL Editor'de şunu bir kez çalıştırın / run once:
+   > ```sql
+   > alter table public.scores drop constraint if exists scores_level_check;
+   > alter table public.scores add constraint scores_level_check check (level in ('easy','medium','hard'));
+   > ```
+   > Eski "Kolay" skorları (→ ↓ ↘) artık "Kolay" altında görünür; istemezseniz Table Editor'de `level = easy` satırlarını `medium` yapın. / Old "easy" rows (→ ↓ ↘) now show under Easy; change them to `medium` in the Table Editor if you prefer.
 5. Birkaç dakika sonra sayfayı yenileyin; skor tablosunun üstünde "Herkesin en iyi süreleri" yazmalı. / Reload; the board should say "Herkesin en iyi süreleri".
 
 **Güvenlik notu / Security note:** `anon` anahtarı herkese açık tasarlanmıştır (tarayıcıda görünür); veritabanı kuralları yalnızca skor **okumaya ve eklemeye** izin verir, silmeye/değiştirmeye izin vermez. Süre 10 sn–1 saat dışındaysa kayıt reddedilir. Yine de skor göndermek isteyen biri sahte kayıt ekleyebilir; uygunsuz bir rumuz görürseniz Supabase → **Table Editor → scores** sayfasından satırı silebilirsiniz.

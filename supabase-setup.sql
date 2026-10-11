@@ -4,7 +4,7 @@
 create table if not exists public.scores (
   id          bigint generated always as identity primary key,
   nickname    text    not null check (char_length(nickname) between 2 and 16),
-  level       text    not null check (level in ('easy', 'hard')),
+  level       text    not null check (level in ('easy', 'medium', 'hard')),
   seconds     integer not null check (seconds between 10 and 3600),
   created_at  timestamptz not null default now()
 );
@@ -22,3 +22,8 @@ drop policy if exists "scores_insert" on public.scores;
 create policy "scores_insert" on public.scores for insert to anon with check (true);
 
 grant select, insert on public.scores to anon;
+
+-- Daha önce (2 seviyeli sürümde) bu dosyayı çalıştırdıysanız, sadece şunu çalıştırın:
+-- If you ran the earlier 2-level version of this file, run only this:
+--   alter table public.scores drop constraint if exists scores_level_check;
+--   alter table public.scores add constraint scores_level_check check (level in ('easy','medium','hard'));

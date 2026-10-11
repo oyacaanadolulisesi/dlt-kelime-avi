@@ -2,7 +2,8 @@
 const TR_ALPHABET = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 const SIZE = 12;
 const WORD_COUNT = 8;
-const DIRS_EASY = [[0, 1], [1, 0], [1, 1]];
+const DIRS_EASY = [[0, 1], [1, 0]];              // Kolay: soldan sağa, yukarıdan aşağı
+const DIRS_MEDIUM = [[0, 1], [1, 0], [1, 1]];    // Orta: + sol üstten sağ alta (çapraz)
 const DIRS_HARD = [[0, 1], [1, 0], [1, 1], [0, -1], [-1, 0], [-1, -1], [-1, 1], [1, -1]];
 
 const up = (s) => s.toLocaleUpperCase("tr-TR");
@@ -11,7 +12,7 @@ const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) {
 
 /** Izgara üretir. Returns { grid, placed:[{word,cat,cells:[[r,c]..]}] } or null. */
 function generate(pool, level) {
-  const dirs = level === "hard" ? DIRS_HARD : DIRS_EASY;
+  const dirs = level === "hard" ? DIRS_HARD : level === "medium" ? DIRS_MEDIUM : DIRS_EASY;
   for (let attempt = 0; attempt < 200; attempt++) {
     // Çeşitlilik için her kategoriden en çok 3 kelime; kelimeler birbirinin içinde geçmesin
     const picks = [];
@@ -68,7 +69,8 @@ if (typeof document !== "undefined") {
   const $ = (id) => document.getElementById(id);
   const gridEl = $("grid"), listEl = $("wordList");
   let game, found, startCell, curPath, timerId, t0, penalty, finished;
-  let level = localStorage.getItem("ka_level") || "easy";
+  let level = localStorage.getItem("ka_level") || "medium";
+  if (!["easy", "medium", "hard"].includes(level)) level = "medium";
   $("level").value = level;
 
   const fmt = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
@@ -174,7 +176,7 @@ if (typeof document !== "undefined") {
     $("modal").hidden = false;
     const res = await Scores.submit(nick, level, t);
     $("modalText").textContent = msg + (res.shared ? " Skorun ortak tabloya eklendi."
-      : Scores.remote ? " Skor sunucuya gönderilemedi, bu cihazda kaydedildi."
+      : Scores.remote ? " Skor sunucuya gönderilemedi, bu cihazda kaydedildi." + (res.detail ? ` (${res.detail})` : "")
       : " Skor bu cihazdaki tabloya kaydedildi.");
   }
 
@@ -204,10 +206,11 @@ if (typeof document !== "undefined") {
     document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.lv === lv));
     const list = $("scoreList"); list.textContent = "";
     $("scoreNote").textContent = "Yükleniyor…";
-    const { rows, shared } = await Scores.top(lv, 10);
+    const { rows, shared, error } = await Scores.top(lv, 10);
     if (scoreLevel !== lv) return;
     $("scoreNote").textContent = shared ? "Herkesin en iyi süreleri"
-      : Scores.remote ? "Sunucuya ulaşılamadı; bu cihazdaki skorlar" : "Bu cihazdaki skorlar";
+      : Scores.remote ? "Sunucuya ulaşılamadı; bu cihazdaki skorlar" + (error ? ` (${error})` : "")
+      : "Bu cihazdaki skorlar";
     if (!rows.length) {
       const li = document.createElement("li"); li.className = "empty"; li.textContent = "Henüz skor yok. İlk sen ol!";
       list.appendChild(li); return;
