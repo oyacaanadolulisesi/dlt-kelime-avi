@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Kelime Avı · Divanü Lügati't-Türk</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Kelime Avı</h1>
+    <p class="sub">Divanü Lügati't-Türk'teki yazılışlarıyla kelimeleri bul</p>
+  </header>
+
+  <div class="layout">
+    <div class="left">
+      <section class="bar">
+        <div class="stat"><span class="lbl">Süre</span><span id="timer">00:00</span></div>
+        <div class="stat"><span class="lbl">Bulunan</span><span id="count">0/8</span></div>
+        <div class="stat"><span class="lbl">En iyi</span><span id="best">–</span></div>
+      </section>
+
+      <div id="gridWrap"><div id="grid" aria-label="Harf tablosu"></div></div>
+    </div>
+
+    <aside>
+      <section class="words">
+        <h2>Aranacak kelimeler</h2>
+        <ul id="wordList"></ul>
+      </section>
+
+      <section class="controls">
+        <select id="level" aria-label="Seviye">
+          <option value="easy">Kolay (→ ↓ ↘)</option>
+          <option value="hard">Zor (8 yön)</option>
+        </select>
+        <button id="hint">İpucu (+10 sn)</button>
+        <button id="new" class="primary">Yeni oyun</button>
+      </section>
+
+      <p class="tip">Harflerin üzerinde parmağınızı veya fareyi sürükleyerek kelimeyi işaretleyin. Bulunca günümüzdeki karşılığı görünür.</p>
+    </aside>
+  </div>
+</main>
+
+<div id="modal" class="modal" hidden>
+  <div class="card">
+    <h2>Tebrikler! 🎉</h2>
+    <p id="modalText"></p>
+    <button id="again" class="primary">Tekrar oyna</button>
+  </div>
+</div>
+
+<script src="words.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
