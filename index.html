@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>Kelime Avı · Divanü Lügati't-Türk</title>
+<title>DLT Kelime Avı · Divanü Lügati't-Türk</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,6 +12,7 @@
   <header>
     <h1>Kelime Avı</h1>
     <p class="sub">Divanü Lügati't-Türk'teki yazılışlarıyla kelimeleri bul</p>
+    <p class="who">👤 <b id="nick">—</b> <button class="link" id="changeNick">değiştir</button> · <button class="link" id="showScores">🏆 Skor tablosu</button></p>
   </header>
 
   <div class="layout">
@@ -45,15 +46,49 @@
   </div>
 </main>
 
+<!-- Rumuz -->
+<div id="nickModal" class="modal" hidden>
+  <form class="card" id="nickForm">
+    <h2>Rumuzun ne olsun?</h2>
+    <p>Skor tablosunda bu isimle görünürsün. Gerçek adını yazman gerekmez.</p>
+    <input id="nickInput" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Rumuz (2–16 karakter)">
+    <p id="nickErr" class="err" role="alert"></p>
+    <div class="row">
+      <button type="button" id="nickCancel" hidden>Vazgeç</button>
+      <button type="submit" class="primary">Başla</button>
+    </div>
+  </form>
+</div>
+
+<!-- Skor tablosu -->
+<div id="scoreModal" class="modal" hidden>
+  <div class="card wide">
+    <h2>🏆 Skor Tablosu</h2>
+    <div class="tabs">
+      <button class="tab active" data-lv="easy">Kolay</button>
+      <button class="tab" data-lv="hard">Zor</button>
+    </div>
+    <p id="scoreNote" class="note"></p>
+    <ol id="scoreList"></ol>
+    <button id="closeScores" class="primary">Kapat</button>
+  </div>
+</div>
+
+<!-- Oyun bitti -->
 <div id="modal" class="modal" hidden>
   <div class="card">
     <h2>Tebrikler! 🎉</h2>
     <p id="modalText"></p>
-    <button id="again" class="primary">Tekrar oyna</button>
+    <div class="row">
+      <button id="winScores">Skor tablosu</button>
+      <button id="again" class="primary">Tekrar oyna</button>
+    </div>
   </div>
 </div>
 
+<script src="config.js"></script>
 <script src="words.js"></script>
+<script src="scores.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

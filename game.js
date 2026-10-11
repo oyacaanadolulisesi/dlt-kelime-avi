@@ -164,18 +164,67 @@ if (typeof document !== "undefined") {
     if (found.size === WORD_COUNT) win();
   }
 
-  function win() {
+  async function win() {
     finished = true; clearInterval(timerId);
     const t = elapsed(), b = getBest();
     $("timer").textContent = fmt(t);
     let msg = `Tüm kelimeleri ${fmt(t)} sürede buldun.`;
     if (!b || t < b) { localStorage.setItem(bestKey(), t); $("best").textContent = fmt(t); msg += " Yeni rekor! 🏆"; }
-    $("modalText").textContent = msg;
+    $("modalText").textContent = msg + " Skorun gönderiliyor…";
     $("modal").hidden = false;
+    const res = await Scores.submit(nick, level, t);
+    $("modalText").textContent = msg + (res.shared ? " Skorun ortak tabloya eklendi."
+      : Scores.remote ? " Skor sunucuya gönderilemedi, bu cihazda kaydedildi."
+      : " Skor bu cihazdaki tabloya kaydedildi.");
   }
 
+  /* ---- Rumuz ---- */
+  let nick = localStorage.getItem("ka_nick") || "";
+  const setNickUI = () => { $("nick").textContent = nick || "—"; };
+
+  function askNick() {
+    return new Promise((resolve) => {
+      const m = $("nickModal"), inp = $("nickInput"), err = $("nickErr"), cancel = $("nickCancel");
+      inp.value = nick; err.textContent = ""; cancel.hidden = !nick; m.hidden = false;
+      setTimeout(() => inp.focus(), 50);
+      cancel.onclick = () => { m.hidden = true; resolve(nick); };
+      $("nickForm").onsubmit = (e) => {
+        e.preventDefault();
+        const v = Scores.cleanNick(inp.value);
+        if (!Scores.validNick(v)) { err.textContent = "2–16 karakter; harf, rakam, boşluk, _ . - kullanabilirsin."; return; }
+        nick = v; localStorage.setItem("ka_nick", nick); setNickUI(); m.hidden = true; resolve(nick);
+      };
+    });
+  }
+
+  /* ---- Skor tablosu ---- */
+  let scoreLevel = level;
+  async function renderScores(lv) {
+    scoreLevel = lv;
+    document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.lv === lv));
+    const list = $("scoreList"); list.textContent = "";
+    $("scoreNote").textContent = "Yükleniyor…";
+    const { rows, shared } = await Scores.top(lv, 10);
+    if (scoreLevel !== lv) return;
+    $("scoreNote").textContent = shared ? "Herkesin en iyi süreleri"
+      : Scores.remote ? "Sunucuya ulaşılamadı; bu cihazdaki skorlar" : "Bu cihazdaki skorlar";
+    if (!rows.length) {
+      const li = document.createElement("li"); li.className = "empty"; li.textContent = "Henüz skor yok. İlk sen ol!";
+      list.appendChild(li); return;
+    }
+    const me = nick.toLocaleLowerCase("tr-TR");
+    rows.forEach((r) => {
+      const li = document.createElement("li");
+      if (r.nick.toLocaleLowerCase("tr-TR") === me) li.className = "me";
+      const a = document.createElement("span"); a.textContent = r.nick;   // textContent: rumuzlar güvenle gösterilir
+      const b = document.createElement("b"); b.textContent = fmt(r.seconds);
+      li.append(a, b); list.appendChild(li);
+    });
+  }
+  const openScores = (lv) => { $("scoreModal").hidden = false; renderScores(lv || level); };
+
   $("hint").addEventListener("click", () => {
-    if (finished) return;
+    if (finished || !game) return;
     const left = game.placed.filter((p) => !found.has(p.word)); if (!left.length) return;
     const p = left[rnd(left.length)]; penalty += 10;
     const [r, c] = p.cells[0]; const el = cellEl(r, c);
@@ -185,5 +234,12 @@ if (typeof document !== "undefined") {
   $("again").addEventListener("click", () => { $("modal").hidden = true; newGame(); });
   $("level").addEventListener("change", (e) => { level = e.target.value; localStorage.setItem("ka_level", level); newGame(); });
 
-  newGame();
+  $("changeNick").addEventListener("click", () => askNick());
+  $("showScores").addEventListener("click", () => openScores(level));
+  $("winScores").addEventListener("click", () => openScores(level));
+  $("closeScores").addEventListener("click", () => { $("scoreModal").hidden = true; });
+  document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => renderScores(b.dataset.lv)));
+
+  setNickUI();
+  if (nick) newGame(); else askNick().then(newGame);
 }
